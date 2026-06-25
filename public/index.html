@@ -1,1 +1,541 @@
 
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Remote Control</title>
+  <style>
+    :root {
+      --bg: #0f0f1a;
+      --card: #1a1a2e;
+      --accent: #00d4ff;
+      --accent2: #7c3aed;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --text: #e2e8f0;
+      --muted: #64748b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, var(--card), #16213e);
+      padding: 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo {
+      font-size: 1.5em;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .status-badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.75em;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status-badge.online { background: rgba(34,197,94,0.2); color: var(--success); }
+    .status-badge.offline { background: rgba(239,68,68,0.2); color: var(--danger); }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Server Input */
+    .server-input {
+      margin-top: 15px;
+      display: flex;
+      gap: 10px;
+    }
+    .server-input input {
+      flex: 1;
+      padding: 12px 15px;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      background: rgba(0,0,0,0.3);
+      color: var(--text);
+      font-size: 0.9em;
+    }
+    .server-input input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .server-input button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Main Content */
+    .main {
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* Device Cards */
+    .section-title {
+      font-size: 0.85em;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 15px;
+    }
+    .devices-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 30px;
+    }
+    .device-card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 20px;
+      border: 2px solid transparent;
+      transition: all 0.3s;
+      cursor: pointer;
+    }
+    .device-card:hover { border-color: rgba(0,212,255,0.3); }
+    .device-card.selected { border-color: var(--accent); background: rgba(0,212,255,0.05); }
+    .device-card.offline { opacity: 0.5; }
+    .device-name {
+      font-size: 1.1em;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .device-meta {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      font-size: 0.85em;
+      color: var(--muted);
+    }
+    .device-meta span { display: flex; align-items: center; gap: 5px; }
+
+    /* Control Panel */
+    .controls {
+      display: none;
+    }
+    .controls.active { display: block; }
+
+    .controls-title {
+      font-size: 1.2em;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .control-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .ctrl-btn {
+      padding: 20px 15px;
+      border: none;
+      border-radius: 12px;
+      background: var(--card);
+      color: var(--text);
+      font-size: 0.9em;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .ctrl-btn .icon { font-size: 1.8em; }
+    .ctrl-btn:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+    .ctrl-btn:active { transform: scale(0.95); }
+    .ctrl-btn.danger { background: rgba(239,68,68,0.2); color: var(--danger); }
+    .ctrl-btn.danger:hover { background: rgba(239,68,68,0.3); }
+
+    /* Input Areas */
+    .input-section {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 15px;
+    }
+    .input-section label {
+      display: block;
+      font-size: 0.85em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+    .input-row input {
+      flex: 1;
+      padding: 12px 15px;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      background: rgba(0,0,0,0.3);
+      color: var(--text);
+    }
+    .input-row input:focus { outline: none; border-color: var(--accent); }
+    .input-row button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: var(--bg);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Log */
+    .log {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 15px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 0.8em;
+    }
+    .log-entry {
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      color: var(--muted);
+    }
+    .log-entry.success { color: var(--success); }
+    .log-entry.error { color: var(--danger); }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 200;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 25px;
+      width: 100%;
+      max-width: 400px;
+    }
+    .modal h3 { margin-bottom: 15px; }
+    .modal p { color: var(--muted); margin-bottom: 20px; }
+    .modal-actions { display: flex; gap: 10px; }
+    .modal-actions button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .modal-actions .cancel { background: rgba(255,255,255,0.1); color: var(--text); }
+    .modal-actions .confirm { background: var(--danger); color: white; }
+
+    /* No devices */
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+    .empty .icon { font-size: 4em; margin-bottom: 20px; }
+    .empty h3 { color: var(--text); margin-bottom: 10px; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-top">
+      <div class="logo">Remote Control</div>
+      <div class="status-badge offline" id="statusBadge">
+        <div class="status-dot"></div>
+        <span id="statusText">Offline</span>
+      </div>
+    </div>
+    <div class="server-input">
+      <input type="text" id="serverUrl" placeholder="Server URL (e.g., your-codespace.dev)">
+      <button onclick="connectToServer()">Connect</button>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="section-title">Devices</div>
+    <div class="devices-list" id="devicesList">
+      <div class="empty">
+        <div class="icon">💻</div>
+        <h3>No devices</h3>
+        <p>Enter server URL and connect agents</p>
+      </div>
+    </div>
+
+    <div class="controls" id="controls">
+      <div class="controls-title">
+        <span>🎮</span>
+        <span id="controlDeviceName">Device</span>
+      </div>
+
+      <div class="control-grid">
+        <button class="ctrl-btn" onclick="send('open', {path: 'notepad'})">
+          <span class="icon">📝</span>
+          Notepad
+        </button>
+        <button class="ctrl-btn" onclick="send('open', {path: 'calc'})">
+          <span class="icon">🔢</span>
+          Calculator
+        </button>
+        <button class="ctrl-btn" onclick="promptUrl()">
+          <span class="icon">🌐</span>
+          Browser
+        </button>
+        <button class="ctrl-btn" onclick="send('lock')">
+          <span class="icon">🔒</span>
+          Lock
+        </button>
+        <button class="ctrl-btn" onclick="send('apps')">
+          <span class="icon">📂</span>
+          Apps
+        </button>
+        <button class="ctrl-btn danger" onclick="confirmAction('shutdown')">
+          <span class="icon">⏻</span>
+          Shutdown
+        </button>
+        <button class="ctrl-btn danger" onclick="confirmAction('restart')">
+          <span class="icon">🔄</span>
+          Restart
+        </button>
+      </div>
+
+      <div class="input-section">
+        <label>Open any app</label>
+        <div class="input-row">
+          <input type="text" id="appPath" placeholder="chrome, vscode, etc.">
+          <button onclick="send('open', {path: document.getElementById('appPath').value})">Open</button>
+        </div>
+      </div>
+
+      <div class="input-section">
+        <label>Custom command</label>
+        <div class="input-row">
+          <input type="text" id="shellCmd" placeholder="dir, ls, etc.">
+          <button onclick="send('shell', {command: document.getElementById('shellCmd').value})">Run</button>
+        </div>
+      </div>
+
+      <div class="log" id="log"></div>
+    </div>
+  </main>
+
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <h3>⚠️ Confirm</h3>
+      <p id="modalMessage">Are you sure?</p>
+      <div class="modal-actions">
+        <button class="cancel" onclick="closeModal()">Cancel</button>
+        <button class="confirm" onclick="confirmYes()">Yes</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script>
+    let socket = null;
+    let devices = [];
+    let selectedDevice = null;
+    let pendingAction = null;
+
+    // Load saved server URL
+    document.getElementById('serverUrl').value = localStorage.getItem('serverUrl') || '';
+
+    function connectToServer() {
+      const url = document.getElementById('serverUrl').value.trim();
+      if (!url) return;
+
+      localStorage.setItem('serverUrl', url);
+      
+      if (socket) socket.disconnect();
+
+      const fullUrl = url.startsWith('http') ? url : `https://${url}`;
+      socket = io(fullUrl);
+
+      socket.on('connect', () => {
+        document.getElementById('statusBadge').className = 'status-badge online';
+        document.getElementById('statusText').textContent = 'Online';
+        log('Connected to server', 'success');
+      });
+
+      socket.on('disconnect', () => {
+        document.getElementById('statusBadge').className = 'status-badge offline';
+        document.getElementById('statusText').textContent = 'Offline';
+        log('Disconnected', 'error');
+      });
+
+      socket.on('devices', (list) => {
+        devices = list;
+        renderDevices();
+      });
+
+      socket.on('cmdResult', (data) => {
+        log(`[${data.cmdId}] ${data.output}`, data.ok ? 'success' : 'error');
+      });
+
+      socket.on('error', (data) => {
+        log(`Error: ${data.message}`, 'error');
+      });
+    }
+
+    function renderDevices() {
+      const list = document.getElementById('devicesList');
+      
+      if (devices.length === 0) {
+        list.innerHTML = `
+          <div class="empty">
+            <div class="icon">💻</div>
+            <h3>No devices</h3>
+            <p>Run agent on your PC to connect</p>
+          </div>
+        `;
+        document.getElementById('controls').classList.remove('active');
+        return;
+      }
+
+      list.innerHTML = devices.map(d => `
+        <div class="device-card ${selectedDevice === d.id ? 'selected' : ''} ${d.online ? '' : 'offline'}" 
+             onclick="selectDevice('${d.id}')">
+          <div class="device-name">
+            <div class="status-dot" style="background: ${d.online ? 'var(--success)' : 'var(--danger)'}"></div>
+            ${d.name}
+          </div>
+          <div class="device-meta">
+            <span>💻 ${d.info.platform}</span>
+            <span>🔌 ${d.info.ip}</span>
+            <span>🧠 ${d.info.freeMem}/${d.info.totalMem} MB</span>
+            <span>⚡ ${d.info.cpus} cores</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function selectDevice(id) {
+      selectedDevice = id;
+      const device = devices.find(d => d.id === id);
+      document.getElementById('controlDeviceName').textContent = device.name;
+      document.getElementById('controls').classList.add('active');
+      renderDevices();
+      log(`Selected: ${device.name}`, 'success');
+    }
+
+    function send(command, args = {}) {
+      if (!selectedDevice) {
+        log('No device selected', 'error');
+        return;
+      }
+      const cmdId = Math.random().toString(36).substr(2, 9);
+      socket.emit('cmd', {
+        deviceId: selectedDevice,
+        cmdId,
+        command,
+        args
+      });
+      log(`Sending: ${command}`, 'success');
+    }
+
+    function promptUrl() {
+      const url = prompt('Enter URL:');
+      if (url) send('browser', { url });
+    }
+
+    function confirmAction(action) {
+      pendingAction = action;
+      document.getElementById('modalMessage').textContent = 
+        `Are you sure you want to ${action}?`;
+      document.getElementById('modal').classList.add('active');
+    }
+
+    function confirmYes() {
+      if (pendingAction) {
+        send(pendingAction);
+        closeModal();
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('active');
+      pendingAction = null;
+    }
+
+    function log(msg, type = '') {
+      const log = document.getElementById('log');
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      log.insertBefore(entry, log.firstChild);
+      if (log.children.length > 30) log.removeChild(log.lastChild);
+    }
+
+    // Enter key handlers
+    document.getElementById('serverUrl').addEventListener('keypress', e => {
+      if (e.key === 'Enter') connectToServer();
+    });
+    document.getElementById('appPath').addEventListener('keypress', e => {
+      if (e.key === 'Enter') send('open', {path: e.target.value});
+    });
+    document.getElementById('shellCmd').addEventListener('keypress', e => {
+      if (e.key === 'Enter') send('shell', {command: e.target.value});
+    });
+
+    // Auto-connect if saved
+    if (localStorage.getItem('serverUrl')) {
+      connectToServer();
+    }
+  </script>
+</body>
+</html>

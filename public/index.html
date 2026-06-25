@@ -66,8 +66,7 @@
     }
     .server-input {
       margin-top: 15px;
-      display: flex;
-      gap: 10px;
+      display: none;
     }
     .server-input input {
       flex: 1;
@@ -348,7 +347,7 @@
     let pendingAction = null;
     let pollInterval = null;
 
-    document.getElementById('serverUrl').value = localStorage.getItem('serverUrl') || '';
+    serverUrl = window.location.origin;
 
     function api(path, data) {
       const url = serverUrl.replace(/\/$/, '') + path;
@@ -360,23 +359,10 @@
     }
 
     function connectToServer() {
-      serverUrl = document.getElementById('serverUrl').value.trim();
-      if (!serverUrl) return;
-      if (!serverUrl.startsWith('http')) serverUrl = 'https://' + serverUrl;
-      localStorage.setItem('serverUrl', serverUrl);
-
-      api('/api/health').then(res => {
-        if (res && res.status === 'ok') {
-          document.getElementById('statusBadge').className = 'status-badge online';
-          document.getElementById('statusText').textContent = 'Online';
-          log('Connected to server', 'success');
-          startPolling();
-        } else {
-          document.getElementById('statusBadge').className = 'status-badge offline';
-          document.getElementById('statusText').textContent = 'Offline';
-          log('Failed to connect', 'error');
-        }
-      });
+      document.getElementById('statusBadge').className = 'status-badge online';
+      document.getElementById('statusText').textContent = 'Online';
+      log('Connected to server', 'success');
+      startPolling();
     }
 
     function startPolling() {
@@ -472,7 +458,7 @@
       if (e.key === 'Enter') send('shell', {command: e.target.value});
     });
 
-    if (localStorage.getItem('serverUrl')) connectToServer();
+    connectToServer();
   </script>
 </body>
 </html>

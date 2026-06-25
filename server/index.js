@@ -1,7 +1,5 @@
-
 const express = require('express');
 const http = require('http');
-const { Server } = require('socket.io');
 const { v4: uuidv4 } = require('uuid');
 const os = require('os');
 const { exec } = require('child_process');
@@ -9,21 +7,15 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: { origin: "*" }
-});
 
 const PORT = process.env.PORT || 3000;
 const AUTH_TOKEN = process.env.AUTH_TOKEN || 'remote-control-secret';
 
-// Store connected devices
 const devices = new Map();
 
-// Serve static files
 app.use(express.static(path.join(__dirname, '../public')));
 app.use(express.json());
 
-// Get device system info
 function getSystemInfo() {
   const nets = os.networkInterfaces();
   let ip = 'Unknown';
@@ -47,162 +39,78 @@ function getSystemInfo() {
   };
 }
 
-// Execute system command
-function runCommand(cmd, args = {}) {
-  return new Promise((resolve) => {
-    let command = '';
-
-    switch (cmd) {
-      case 'open':
-        if (os.platform() === 'win32') {
-          command = `start "" "${args.path}"`;
-        } else if (os.platform() === 'darwin') {
-          command = `open "${args.path}"`;
-        } else {
-          command = `${args.path} &`;
-        }
-        break;
-
-      case 'browser':
-        const url = args.url.startsWith('http') ? args.url : `https://${args.url}`;
-        if (os.platform() === 'win32') {
-          command = `start "" "${url}"`;
-        } else if (os.platform() === 'darwin') {
-          command = `open "${url}"`;
-        } else {
-          command = `xdg-open "${url}"`;
-        }
-        break;
-
-      case 'shutdown':
-        command = os.platform() === 'win32' ? 'shutdown /s /t 0' : 'sudo shutdown -h now';
-        break;
-
-      case 'restart':
-        command = os.platform() === 'win32' ? 'shutdown /r /t 0' : 'sudo reboot';
-        break;
-
-      case 'lock':
-        if (os.platform() === 'win32') {
-          command = 'rundll32.exe user32.dll,LockWorkStation';
-        } else if (os.platform() === 'darwin') {
-          command = 'pmset displaysleepnow';
-        } else {
-          command = 'xdg-screensaver lock';
-        }
-        break;
-
-      case 'apps':
-        if (os.platform() === 'win32') {
-          command = 'powershell "Get-ChildItem \'C:\\Program Files\',\'C:\\Program Files (x86)\' -Directory | Select-Object -ExpandProperty Name"';
-        } else if (os.platform() === 'darwin') {
-          command = 'ls /Applications';
-        } else {
-          command = 'ls /usr/bin | head -50';
-        }
-        break;
-
-      case 'shell':
-        command = args.command;
-        break;
-
-      default:
-        resolve({ ok: false, output: 'Unknown command' });
-        return;
-    }
-
-    exec(command, { timeout: 30000 }, (err, stdout, stderr) => {
-      if (err) {
-        resolve({ ok: false, output: err.message });
-      } else {
-        resolve({ ok: true, output: stdout || 'Done' });
-      }
-    });
+// Agent registration
+app.post('/api/register', (req, res) => {
+  const { token, name, info } = req.body;
+  if (token !== AUTH_TOKEN) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+  const id = uuidv4();
+  devices.set(id, {
+    id,
+    name: name || 'Unknown',
+    info: info || getSystemInfo(),
+    online: true,
+    lastSeen: Date.now(),
+    commands: []
   });
-}
-
-// Socket.io connection handling
-io.on('connection', (socket) => {
-  console.log('Connected:', socket.id);
-
-  // Device registration (agent connects)
-  socket.on('register', (data) => {
-    if (data.token !== AUTH_TOKEN) {
-      socket.emit('error', { message: 'Invalid token' });
-      return;
-    }
-
-    const id = uuidv4();
-    devices.set(id, {
-      id,
-      name: data.name || os.hostname(),
-      info: getSystemInfo(),
-      socketId: socket.id,
-      online: true,
-      lastSeen: Date.now()
-    });
-
-    socket.deviceId = id;
-    socket.emit('registered', { id });
-    io.emit('devices', Array.from(devices.values()));
-    console.log('Device registered:', data.name);
-  });
-
-  // Command from web interface to agent
-  socket.on('cmd', async (data) => {
-    const device = devices.get(data.deviceId);
-    if (!device) {
-      socket.emit('cmdResult', { error: 'Device not found' });
-      return;
-    }
-
-    // Forward command to agent
-    io.to(device.socketId).emit('execute', {
-      cmdId: data.cmdId,
-      command: data.command,
-      args: data.args
-    });
-  });
-
-  // Result from agent
-  socket.on('cmdResult', (data) => {
-    // Forward result to web interface
-    io.emit('cmdResult', data);
-  });
-
-  // Device sends system info update
-  socket.on('updateInfo', (data) => {
-    const device = devices.get(socket.deviceId);
-    if (device) {
-      device.info = data;
-      device.lastSeen = Date.now();
-      io.emit('devices', Array.from(devices.values()));
-    }
-  });
-
-  // Disconnect
-  socket.on('disconnect', () => {
-    if (socket.deviceId) {
-      const device = devices.get(socket.deviceId);
-      if (device) {
-        device.online = false;
-        io.emit('devices', Array.from(devices.values()));
-      }
-      console.log('Device disconnected:', socket.deviceId);
-    }
-  });
+  console.log('Device registered:', name, id);
+  res.json({ id });
 });
 
-// API endpoints
+// Agent heartbeat
+app.post('/api/heartbeat', (req, res) => {
+  const { token, deviceId, info } = req.body;
+  if (token !== AUTH_TOKEN) return res.status(401).json({ error: 'Invalid token' });
+  const device = devices.get(deviceId);
+  if (!device) return res.status(404).json({ error: 'Device not found' });
+  device.online = true;
+  device.lastSeen = Date.now();
+  if (info) device.info = info;
+  // Return pending commands
+  const cmds = device.commands.splice(0);
+  res.json({ commands: cmds });
+});
+
+// Agent reports command result
+app.post('/api/result', (req, res) => {
+  const { token, deviceId, cmdId, ok, output } = req.body;
+  if (token !== AUTH_TOKEN) return res.status(401).json({ error: 'Invalid token' });
+  console.log(`Result [${cmdId}]: ${ok ? 'OK' : 'FAIL'} - ${output}`);
+  res.json({ ok: true });
+});
+
+// Web interface: get devices
 app.get('/api/devices', (req, res) => {
-  res.json(Array.from(devices.values()));
+  const now = Date.now();
+  const list = Array.from(devices.values()).map(d => ({
+    ...d,
+    online: (now - d.lastSeen) < 15000
+  }));
+  res.json(list);
 });
 
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', devices: devices.size, uptime: process.uptime() });
+// Web interface: send command
+app.post('/api/command', (req, res) => {
+  const { deviceId, command, args } = req.body;
+  const device = devices.get(deviceId);
+  if (!device) return res.status(404).json({ error: 'Device not found' });
+  const cmdId = Math.random().toString(36).substr(2, 9);
+  device.commands.push({ cmdId, command, args });
+  console.log(`Command queued: ${command} for ${device.name}`);
+  res.json({ cmdId });
 });
 
-// Start server
+// Mark offline devices
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, device] of devices) {
+    if ((now - device.lastSeen) > 30000) {
+      device.online = false;
+    }
+  }
+}, 10000);
+
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`\n=== Remote Control Server ===`);
   console.log(`Port: ${PORT}`);

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -13,7 +12,6 @@
       --accent2: #7c3aed;
       --danger: #ef4444;
       --success: #22c55e;
-      --warning: #f59e0b;
       --text: #e2e8f0;
       --muted: #64748b;
     }
@@ -23,10 +21,7 @@
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
-      overflow-x: hidden;
     }
-
-    /* Header */
     .header {
       background: linear-gradient(135deg, var(--card), #16213e);
       padding: 20px;
@@ -69,8 +64,6 @@
       0%, 100% { opacity: 1; }
       50% { opacity: 0.5; }
     }
-
-    /* Server Input */
     .server-input {
       margin-top: 15px;
       display: flex;
@@ -85,10 +78,7 @@
       color: var(--text);
       font-size: 0.9em;
     }
-    .server-input input:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
+    .server-input input:focus { outline: none; border-color: var(--accent); }
     .server-input button {
       padding: 12px 20px;
       border: none;
@@ -98,15 +88,11 @@
       font-weight: 600;
       cursor: pointer;
     }
-
-    /* Main Content */
     .main {
       padding: 20px;
       max-width: 800px;
       margin: 0 auto;
     }
-
-    /* Device Cards */
     .section-title {
       font-size: 0.85em;
       text-transform: uppercase;
@@ -146,23 +132,13 @@
       font-size: 0.85em;
       color: var(--muted);
     }
-    .device-meta span { display: flex; align-items: center; gap: 5px; }
-
-    /* Control Panel */
-    .controls {
-      display: none;
-    }
+    .controls { display: none; }
     .controls.active { display: block; }
-
     .controls-title {
       font-size: 1.2em;
       font-weight: 600;
       margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
     }
-
     .control-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -189,8 +165,6 @@
     .ctrl-btn:active { transform: scale(0.95); }
     .ctrl-btn.danger { background: rgba(239,68,68,0.2); color: var(--danger); }
     .ctrl-btn.danger:hover { background: rgba(239,68,68,0.3); }
-
-    /* Input Areas */
     .input-section {
       background: var(--card);
       border-radius: 12px;
@@ -225,8 +199,6 @@
       font-weight: 600;
       cursor: pointer;
     }
-
-    /* Log */
     .log {
       background: var(--card);
       border-radius: 12px;
@@ -243,8 +215,6 @@
     }
     .log-entry.success { color: var(--success); }
     .log-entry.error { color: var(--danger); }
-
-    /* Modal */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -276,8 +246,6 @@
     }
     .modal-actions .cancel { background: rgba(255,255,255,0.1); color: var(--text); }
     .modal-actions .confirm { background: var(--danger); color: white; }
-
-    /* No devices */
     .empty {
       text-align: center;
       padding: 60px 20px;
@@ -285,8 +253,6 @@
     }
     .empty .icon { font-size: 4em; margin-bottom: 20px; }
     .empty h3 { color: var(--text); margin-bottom: 10px; }
-
-    /* Scrollbar */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
@@ -302,7 +268,7 @@
       </div>
     </div>
     <div class="server-input">
-      <input type="text" id="serverUrl" placeholder="Server URL (e.g., your-codespace.dev)">
+      <input type="text" id="serverUrl" placeholder="Server URL">
       <button onclick="connectToServer()">Connect</button>
     </div>
   </header>
@@ -318,39 +284,29 @@
     </div>
 
     <div class="controls" id="controls">
-      <div class="controls-title">
-        <span>🎮</span>
-        <span id="controlDeviceName">Device</span>
-      </div>
+      <div class="controls-title" id="controlDeviceName">Device</div>
 
       <div class="control-grid">
         <button class="ctrl-btn" onclick="send('open', {path: 'notepad'})">
-          <span class="icon">📝</span>
-          Notepad
+          <span class="icon">📝</span> Notepad
         </button>
         <button class="ctrl-btn" onclick="send('open', {path: 'calc'})">
-          <span class="icon">🔢</span>
-          Calculator
+          <span class="icon">🔢</span> Calculator
         </button>
         <button class="ctrl-btn" onclick="promptUrl()">
-          <span class="icon">🌐</span>
-          Browser
+          <span class="icon">🌐</span> Browser
         </button>
         <button class="ctrl-btn" onclick="send('lock')">
-          <span class="icon">🔒</span>
-          Lock
+          <span class="icon">🔒</span> Lock
         </button>
         <button class="ctrl-btn" onclick="send('apps')">
-          <span class="icon">📂</span>
-          Apps
+          <span class="icon">📂</span> Apps
         </button>
         <button class="ctrl-btn danger" onclick="confirmAction('shutdown')">
-          <span class="icon">⏻</span>
-          Shutdown
+          <span class="icon">⏻</span> Shutdown
         </button>
         <button class="ctrl-btn danger" onclick="confirmAction('restart')">
-          <span class="icon">🔄</span>
-          Restart
+          <span class="icon">🔄</span> Restart
         </button>
       </div>
 
@@ -376,7 +332,7 @@
 
   <div class="modal-overlay" id="modal">
     <div class="modal">
-      <h3>⚠️ Confirm</h3>
+      <h3>Confirm</h3>
       <p id="modalMessage">Are you sure?</p>
       <div class="modal-actions">
         <button class="cancel" onclick="closeModal()">Cancel</button>
@@ -385,80 +341,77 @@
     </div>
   </div>
 
-  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script>
-    let socket = null;
+    let serverUrl = '';
     let devices = [];
     let selectedDevice = null;
     let pendingAction = null;
+    let pollInterval = null;
 
-    // Load saved server URL
     document.getElementById('serverUrl').value = localStorage.getItem('serverUrl') || '';
 
+    function api(path, data) {
+      const url = serverUrl.replace(/\/$/, '') + path;
+      return fetch(url, {
+        method: data ? 'POST' : 'GET',
+        headers: data ? { 'Content-Type': 'application/json' } : {},
+        body: data ? JSON.stringify(data) : undefined
+      }).then(r => r.json()).catch(() => null);
+    }
+
     function connectToServer() {
-      const url = document.getElementById('serverUrl').value.trim();
-      if (!url) return;
+      serverUrl = document.getElementById('serverUrl').value.trim();
+      if (!serverUrl) return;
+      if (!serverUrl.startsWith('http')) serverUrl = 'https://' + serverUrl;
+      localStorage.setItem('serverUrl', serverUrl);
 
-      localStorage.setItem('serverUrl', url);
-      
-      if (socket) socket.disconnect();
-
-      const fullUrl = url.startsWith('http') ? url : `https://${url}`;
-      socket = io(fullUrl);
-
-      socket.on('connect', () => {
-        document.getElementById('statusBadge').className = 'status-badge online';
-        document.getElementById('statusText').textContent = 'Online';
-        log('Connected to server', 'success');
+      api('/api/health').then(res => {
+        if (res && res.status === 'ok') {
+          document.getElementById('statusBadge').className = 'status-badge online';
+          document.getElementById('statusText').textContent = 'Online';
+          log('Connected to server', 'success');
+          startPolling();
+        } else {
+          document.getElementById('statusBadge').className = 'status-badge offline';
+          document.getElementById('statusText').textContent = 'Offline';
+          log('Failed to connect', 'error');
+        }
       });
+    }
 
-      socket.on('disconnect', () => {
-        document.getElementById('statusBadge').className = 'status-badge offline';
-        document.getElementById('statusText').textContent = 'Offline';
-        log('Disconnected', 'error');
-      });
+    function startPolling() {
+      if (pollInterval) clearInterval(pollInterval);
+      pollDevices();
+      pollInterval = setInterval(pollDevices, 3000);
+    }
 
-      socket.on('devices', (list) => {
-        devices = list;
-        renderDevices();
-      });
-
-      socket.on('cmdResult', (data) => {
-        log(`[${data.cmdId}] ${data.output}`, data.ok ? 'success' : 'error');
-      });
-
-      socket.on('error', (data) => {
-        log(`Error: ${data.message}`, 'error');
+    function pollDevices() {
+      api('/api/devices').then(list => {
+        if (list) {
+          devices = list;
+          renderDevices();
+        }
       });
     }
 
     function renderDevices() {
-      const list = document.getElementById('devicesList');
-      
+      const el = document.getElementById('devicesList');
       if (devices.length === 0) {
-        list.innerHTML = `
-          <div class="empty">
-            <div class="icon">💻</div>
-            <h3>No devices</h3>
-            <p>Run agent on your PC to connect</p>
-          </div>
-        `;
+        el.innerHTML = '<div class="empty"><div class="icon">💻</div><h3>No devices</h3><p>Run agent on your PC</p></div>';
         document.getElementById('controls').classList.remove('active');
         return;
       }
-
-      list.innerHTML = devices.map(d => `
-        <div class="device-card ${selectedDevice === d.id ? 'selected' : ''} ${d.online ? '' : 'offline'}" 
-             onclick="selectDevice('${d.id}')">
+      el.innerHTML = devices.map(d => `
+        <div class="device-card ${selectedDevice === d.id ? 'selected' : ''} ${d.online ? '' : 'offline'}" onclick="selectDevice('${d.id}')">
           <div class="device-name">
-            <div class="status-dot" style="background: ${d.online ? 'var(--success)' : 'var(--danger)'}"></div>
+            <div class="status-dot" style="background:${d.online ? 'var(--success)' : 'var(--danger)'}"></div>
             ${d.name}
           </div>
           <div class="device-meta">
-            <span>💻 ${d.info.platform}</span>
-            <span>🔌 ${d.info.ip}</span>
-            <span>🧠 ${d.info.freeMem}/${d.info.totalMem} MB</span>
-            <span>⚡ ${d.info.cpus} cores</span>
+            <span>${d.info.platform}</span>
+            <span>${d.info.ip}</span>
+            <span>RAM: ${d.info.freeMem}/${d.info.totalMem} MB</span>
+            <span>CPU: ${d.info.cpus} cores</span>
           </div>
         </div>
       `).join('');
@@ -470,22 +423,14 @@
       document.getElementById('controlDeviceName').textContent = device.name;
       document.getElementById('controls').classList.add('active');
       renderDevices();
-      log(`Selected: ${device.name}`, 'success');
+      log('Selected: ' + device.name, 'success');
     }
 
-    function send(command, args = {}) {
-      if (!selectedDevice) {
-        log('No device selected', 'error');
-        return;
-      }
-      const cmdId = Math.random().toString(36).substr(2, 9);
-      socket.emit('cmd', {
-        deviceId: selectedDevice,
-        cmdId,
-        command,
-        args
+    function send(command, args) {
+      if (!selectedDevice) { log('No device selected', 'error'); return; }
+      api('/api/command', { deviceId: selectedDevice, command, args }).then(res => {
+        if (res) log('Sent: ' + command, 'success');
       });
-      log(`Sending: ${command}`, 'success');
     }
 
     function promptUrl() {
@@ -495,16 +440,12 @@
 
     function confirmAction(action) {
       pendingAction = action;
-      document.getElementById('modalMessage').textContent = 
-        `Are you sure you want to ${action}?`;
+      document.getElementById('modalMessage').textContent = 'Are you sure you want to ' + action + '?';
       document.getElementById('modal').classList.add('active');
     }
 
     function confirmYes() {
-      if (pendingAction) {
-        send(pendingAction);
-        closeModal();
-      }
+      if (pendingAction) { send(pendingAction); closeModal(); }
     }
 
     function closeModal() {
@@ -512,16 +453,15 @@
       pendingAction = null;
     }
 
-    function log(msg, type = '') {
-      const log = document.getElementById('log');
+    function log(msg, type) {
+      const el = document.getElementById('log');
       const entry = document.createElement('div');
-      entry.className = `log-entry ${type}`;
-      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-      log.insertBefore(entry, log.firstChild);
-      if (log.children.length > 30) log.removeChild(log.lastChild);
+      entry.className = 'log-entry ' + (type || '');
+      entry.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+      el.insertBefore(entry, el.firstChild);
+      if (el.children.length > 30) el.removeChild(el.lastChild);
     }
 
-    // Enter key handlers
     document.getElementById('serverUrl').addEventListener('keypress', e => {
       if (e.key === 'Enter') connectToServer();
     });
@@ -532,10 +472,7 @@
       if (e.key === 'Enter') send('shell', {command: e.target.value});
     });
 
-    // Auto-connect if saved
-    if (localStorage.getItem('serverUrl')) {
-      connectToServer();
-    }
+    if (localStorage.getItem('serverUrl')) connectToServer();
   </script>
 </body>
 </html>
